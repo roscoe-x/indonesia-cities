@@ -1,7 +1,7 @@
 const express = require('express')
 const app = express()
-const PORT = 3000
-//const PORT = process.env.PORT || 8080;
+//const PORT = 3000
+const PORT = process.env.PORT || 8080;
 //var MongoClient = require('mongodb').MongoClient;
 const { MongoClient, ObjectID } = require('mongodb');
 
