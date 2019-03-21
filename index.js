@@ -542,7 +542,7 @@ app.post('/insertkecamatan', auth, urlencodedParser, function (req, res){
     var isJson = 0;
     reply += "<br>City id is : " + cityId;
 
-    //console.log(req.body)
+    console.log(req.body)
 
         reply += "<br>Array length is : " + req.body.kecamatan.length;
         reply += "<br>Kecamatan name is : " + req.body.kecamatan;
