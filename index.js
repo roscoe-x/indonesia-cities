@@ -1,12 +1,8 @@
 const express = require('express')
 const app = express()
-//const PORT = 3000
-const PORT = process.env.PORT || 8080;
+//const PORT = process.env.PORT || 8080;
 //var MongoClient = require('mongodb').MongoClient;
 const { MongoClient, ObjectID } = require('mongodb');
-
-// MongoDB connection
-//var url = "mongodb://mongo:27017/indonesiaprovincesdb";
 //var url = "mongodb://35.240.240.28:27017/indonesiaprovincesdb";
 var url = "mongodb+srv://indonesia-news-user:fIre15@cluster0-tpcht.mongodb.net/test?retryWrites=true"
 
@@ -20,6 +16,8 @@ var dd = require('./ddmodule');
 const crypto = require('crypto');
 var moment = require('moment');
 
+const secret = 'hidupberharga.com';
+
 app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(expressSession({
@@ -30,7 +28,7 @@ app.use(expressSession({
 
 var auth = function(req, res, next) {
     console.log(req.session.user);  
-    if (req.session && req.session.user === "roy" && req.session.admin)
+    if (req.session && req.session.user !== null && req.session.admin)
         return next();
     else {
         res.setHeader('Content-Type', 'text/html')
@@ -114,9 +112,123 @@ MongoClient.connect(url, { useNewUrlParser: true }, function (err, client) {
 
 });
 
+app.get('/register', function (req, res) {
+    var html =''
+    res.setHeader('Content-Type', 'text/html')
+    res.write('<br>Register using the form below.')
+        
+    html += "<form action='/register'  method='post' name='form1'>";
+    html += "<div id='divParent'>";
+    html += "<div id='div1' name='formset' class='formset'>";
+    html += "<p>User name: <input type= 'text' name='username' required></p>";
+    html += '<p>Email: <input type="text" name="email" required></input></p>';
+    html += "<p>Password: <input type='password' name='pwd' id='pwd' onkeyup='checkPassword()' required></p>";
+    html += "<p>Confirm password: <input type='password' name='confirmpwd' id='confirmpwd' onkeyup='checkPassword()' required></p>";
+    html += '<p id="divCheckPasswordMatch"></p>';
+    html += "</div>";
+    html += "</div>";
+    html += "<input id='input1' type='submit' value='Sign-up'>";
+    html += "<INPUT type='reset'  value='Reset'>";
+    html += "</form>";    
+    html += `<script>
+    
+   var i = 0;
+   
+   
+   function checkPassword() {
+   var pw1 = document.getElementById('pwd').value;
+   var pw2 = document.getElementById('confirmpwd').value;
+   
+   
+   if (pw1 === pw2) {
+       document.getElementById('divCheckPasswordMatch').style.color = 'green';
+       document.getElementById("divCheckPasswordMatch").innerHTML = "Password match.";
+       document.getElementById("input1").disabled = false;
+   } else {
+       document.getElementById('divCheckPasswordMatch').style.color = 'red';
+       document.getElementById("divCheckPasswordMatch").innerHTML = "Password is different!";
+       document.getElementById("input1").disabled = true;
+   }
+   }
+   
+    </script>`
+    res.write(html);
+    res.end()
+});
+
+app.post('/register', urlencodedParser, function (req, res) {
+    res.setHeader('Content-Type', 'text/html')
+    var reply='';
+    console.log(req.body.username)
+
+    
+    const hash = crypto.createHmac('sha256', secret)
+                   .update(req.body.pwd)
+                   .digest('hex');
+
+    reply += "<br>User name is : " + req.body.username;
+    reply += "<br>Password is : " + hash; 
+
+    /*MongoClient.connect(url, { useNewUrlParser: true }, function(err, db) {
+        if (err) throw err;
+        var dbo = db.db("indonesiaprovincesdb");
+
+        dbo.collection("customers").createIndex( { username: 1 }, { unique: true } )
+
+        memberobject = { username: req.body.username, email: req.body.email, password: req.body.pwd }
+        try {
+            dbo.collection("member").insertOne(memberobject);
+            reply += "<br>1 document in member inserted";
+            reply += "<p><a href='/'>Back to home page</a>"
+            console.log("1 document in member inserted");
+        } catch (e) {
+            console.log("Error ========")
+            console.log(e);
+        }
+    })*/
+    MongoClient.connect(url, { useNewUrlParser: true })
+        .then(function (db) { // <- db as first argument
+            //console.log(db)
+            var dbo = db.db("indonesiaprovincesdb");
+
+            dbo.collection("member").createIndex( { username: 1 }, { unique: true } )
+
+            memberobject = { username: req.body.username, email: req.body.email, password: hash }
+            dbo.collection("member").insertOne(memberobject)
+            .then(function (result) {
+                reply += "<br>1 document in member inserted";
+                reply += "<p><a href='/'>Back to home page</a>"
+                console.log("1 document in member inserted");
+                res.send(reply)
+                res.end()
+            })
+            .catch(function (err) {
+                console.log("Error -----------")
+                console.log(err);
+            })
+        })
+        .catch(function (err) {
+            console.log("Error ========")
+            console.log(err);
+        })
+});
+
 app.get('/login', function (req, res) {
     var html =''
     res.setHeader('Content-Type', 'text/html')
+    html += `<head><title>Indonesia Provinces - Login</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <style>
+        .right {
+            position: absolute;
+            right: 10px;
+        }
+    </style></head>`
+    
     res.write('<br>Please login to view content.')
         
     html += "<form action='/login'  method='post' name='form1'>";
@@ -129,12 +241,14 @@ app.get('/login', function (req, res) {
     html += "<input id='input1' type='submit' value='Login'>";
     html += "<INPUT type='reset'  value='Reset'>";
     html += "</form>";    
+    html += "<br><a href='/register'>or Register</a>";
+    //html += "<br><a href='/checkmember'>Check member</a>" 
     res.write(html);
     res.end()
 });
 
 app.post('/login', urlencodedParser, function (req, res) {
-    const secret = 'hidupberharga.com';
+    
     const hash = crypto.createHmac('sha256', secret)
                    .update(req.body.pwd)
                    .digest('hex');
@@ -143,8 +257,37 @@ app.post('/login', urlencodedParser, function (req, res) {
     var reply='';
     //console.log(req.body.username)
     //console.log(req.body.pwd)
+
+    MongoClient.connect(url, { useNewUrlParser: true })
+        .then(function (db) { // <- db as first argument
+            //console.log(db)
+            var dbo = db.db("indonesiaprovincesdb");
+
+            //dbo.collection("member").createIndex( { username: 1 }, { unique: true } )
+
+            var query1 = { username: req.body.username, password: hash }
+            //var o_id = new ObjectID(cityId)
+            //myquery = { username: cityId };
+            dbo.collection("member").findOne(query1)
+            //dbo.collection("member").insertOne(memberobject)
+            .then(function (result) {
+                req.session.user = result.username;
+                req.session.admin = true;
+                console.log("User name is : "+result.username);
+                db.close();
+                res.redirect(301, '/')
+            })
+            .catch(function (err) {
+                console.log("Login failed")
+                console.log(err);
+            })
+        })
+        .catch(function (err) {
+            console.log("Error connect to DB")
+            console.log(err);
+        })
      
-    if (!req.body.username || !req.body.pwd) {
+    /*if (!req.body.username || !req.body.pwd) {
         res.send('login failed');
     } else if(req.body.username === "roy" || hash === "c46894173ec96737a9299c227abe40564f6e39d7e74dca5b59b5cd228d5cd66b") {
         req.session.user = "roy";
@@ -154,7 +297,7 @@ app.post('/login', urlencodedParser, function (req, res) {
         
         //res.end();
         res.redirect(301, '/')
-    }
+    }*/
 });
 
 app.get('/logout', function (req, res) {
@@ -162,6 +305,32 @@ app.get('/logout', function (req, res) {
     res.send("logout success!");
     //res.redirect(301, '/')
 });
+
+/*app.get('/checkmember', function (req, res) {
+    res.setHeader('Content-Type', 'text/html')
+    reply ='';
+    MongoClient.connect(url, { useNewUrlParser: true }, function(err, db) {
+        if (err) throw err;
+        var dbo = db.db("indonesiaprovincesdb");
+
+        dbo.collection("member").createIndex( { username: 1 }, { unique: true } )
+
+        //memberobject = { username: req.body.username, email: req.body.email, password: req.body.pwd }
+            dbo.collection("member").find({}).toArray(function(err, result) {
+                if (err) throw err;
+
+                for (i=0; i<result.length; i++) {
+                    reply += "<br>"+JSON.stringify(result[i], null, 4);
+                }
+                
+                console.log(result);
+                db.close();
+                res.write(reply);
+                res.end()
+            })
+    })
+    
+});*/
 
 app.get('/', (req, res) => {
     res.setHeader('Content-Type', 'text/html')
@@ -577,23 +746,23 @@ app.post('/insertkecamatan', auth, urlencodedParser, function (req, res){
             console.log(e);
         }
 
-        dbo.collection("provinces").findOne(myquery, function(err, result) {
+        dbo.collection("provinces").findOne(myquery, function(err, result2) {
             if (err) throw err;
             //console.log("\n1. Insert provinces");
-            console.log(result);
+            console.log(result2);
 
             var arrayNo;
-            if (result.kecamatan == null) {
+            if (result2.kecamatan == null) {
                 arrayNo = 0;
             } else {
-                arrayNo = result.kecamatan.length
+                arrayNo = result2.kecamatan.length
             }
             var indexNo=0;
 
             reply += "<br><br>Existing kecamatan in "+cityName+":<br>";
             for (var i = 0; i < arrayNo; i++) {
                 indexNo++;
-                reply += `${indexNo}. ${result.kecamatan[i]}<br>`;
+                reply += `${indexNo}. ${result2.kecamatan[i]}<br>`;
             }
 
             res.send(reply);
