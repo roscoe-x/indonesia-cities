@@ -490,8 +490,143 @@ app.get('/hotels', (req, res) => {
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script></head>`
     res.write('<h1>Hotels in Indonesia Provinces</h1>')
     res.write('This application will show you Hotel List in Indonesia Provinces and its Regencies and Cities')
+
+    html += "<form action='/hotels'  method='post' name='hotelform'>";
+    html += "<div id='divParent'>";
+    html += "<div id='div1' name='formset' class='formset'>";
+    html += "<p>Hotel name: <input type='text' name='name'></p>"
+    html += "<p>Hotel address: <input type='text' name='address'></p>"
+    html += "<p>Phone number: <input type='text' name='phone'></p>"
+    html += "<p>Regency / City: <input type='text' name='city'></p>";
+    html += "<p>Province: <input type= 'text' name='province'></p>";
+    html += "</div>";
+    html += "</div>";
+    html += "<input id='hotelform' type='submit' value='Save'>";
+    html += "<input type='reset'  value='Reset'>";
+    html += "</form>";
+
+    html += "<form action='/searchhotel'  method='post' name='searchhotel'>";
+    html += "<div id='divParent'>";
+    html += "<div id='div1' name='formset' class='formset'>";
+    html += "<p>Hotel name: <input type='text' name='name'></p>"
+    html += "<p>Regency / City: <input type='text' name='city'></p>";
+    html += "<p>Province: <input type= 'text' name='province'></p>";
+    html += "</div>";
+    html += "</div>";
+    html += "<input id='input1' type='submit' value='Search'>";
+    html += "<input type='reset'  value='Reset'>";
+    html += "</form>";
     res.write(html);
     res.end()
+})
+
+app.post('/searchhotel', urlencodedParser, function (req, res){
+    var reply='';
+    reply += `<head>
+    <style>
+    table {
+        width:100%;
+    }
+    table, th, td {
+        border: 1px solid black;
+        border-collapse: collapse;
+    }
+    th, td {
+        padding: 15px;
+        text-align: left;
+    }
+    table#t01 tr:nth-child(even) {
+        background-color: #eee;
+    }
+    table#t01 tr:nth-child(odd) {
+       background-color: #fff;
+    }
+    table#t01 th {
+        background-color: green;
+        color: white;
+    }
+    .right {
+        position: absolute;
+        right: 10px;
+    }
+    </style>
+     </head>`;
+    //reply += "<br><a class='right' href='/logout'>Log Out</a>"
+    reply += "<br>Array length is : " + req.body.name.length;
+    reply += "<br>Hotel name is : " + req.body.name;
+    reply += "<br>City is : " + req.body.city; 
+    //res.write(reply);
+
+    MongoClient.connect(url, { useNewUrlParser: true }, function(err, db) {
+        if (err) throw err;
+        var dbo = db.db("indonesiaprovincesdb");
+        
+        // find()
+        var query = { $or : [ { province: { $regex : req.body.province, $options : 'i' }},
+            {city: { $regex: req.body.city, $options: 'i' }}, { hotelname: { $regex: req.body.name, $options: 'i'}}]};
+        console.log(query);
+        dbo.collection("hotels").find(query).toArray(function(err, result) {
+            if (err) throw err;
+            //console.log("\n5. ");
+            console.log(result);
+            reply += "<br><br>Result is:<br>";
+            //var result2 = JSON.stringify(result);
+            //reply += result2;
+            //reply += "No&emsp;Province&emsp;City/Regency<br>"
+            reply += `<table id="t01">
+            <tr>
+              <th>No</th>
+              <th>Hotel</th> 
+              <th>City / Regency</th>
+              <th>Province</th>
+            </tr>`
+            for (var i = 0, len = result.length; i < len; i++) {
+                reply += "<tr><td>"+(i+1)+"</td><td>"+result[i].hotelname +"</td><td>"+ result[i].city+
+                   "</td><td>"+result[i].province+"</td></tr>"
+              }
+            db.close();
+            res.send(reply);
+        });
+        
+    });
+});
+
+app.post('/hotels', auth, urlencodedParser, function (req, res){
+    var cityId= req.query.cityid;
+    var reply='';
+    var isJson = 0;
+    reply += "<br>City id is : " + cityId;
+
+    //console.log(req.body)
+
+        reply += "<br>Array length is : " + req.body.name.length;
+        reply += "<br>Hotel name is : " + req.body.name;
+
+    
+    MongoClient.connect(url, { useNewUrlParser: true }, function(err, db) {
+        if (err) throw err;
+
+        var emptyflag = 0;
+        var dbo = db.db("indonesiaprovincesdb");
+        
+        var cityName;
+        //var o_id = new ObjectID(cityId)
+        var myobj = { hotelname: req.body.name, address: req.body.address, 
+            phone: req.body.phone, city: req.body.city, province: req.body.province, insertdate: new Date() };
+                console.log(myobj)
+                dbo.collection("hotels").insertOne(myobj, function(err, res) {
+                    if (err) throw err;
+                    console.log("1 document in hotels inserted!");
+                    reply += "1 document in hotels inserted!"
+                    db.close();
+                });
+        
+                dbo.collection('hotels').countDocuments().then((count) => {
+                    console.log("No of hotels in database : "+count);
+                    reply += "No of hotels in database : "+count;
+                    res.send(reply);
+                });
+    });
 })
 
 app.get('/airport', (req, res) => {
@@ -624,7 +759,11 @@ app.post('/search', urlencodedParser, function (req, res){
               <th>Kecamatan</th>
             </tr>`
             for (var i = 0, len = result.length; i < len; i++) {
-                reply += "<tr><td>"+(i+1)+"</td><td>"+result[i].province +"</td><td><a href='/city?cityid="+result[i]._id+"'>"+ result[i].city+"<a/></td><td>"+result[i].Note+"</td><td><a href='/insertkecamatan?cityid="+result[i]._id+"'>Insert Kecamatan</a></td></tr>"
+                //console.log(result[i].kecamatan)
+                if (result[i].kecamatan === undefined)
+                    reply += "<tr><td>"+(i+1)+"</td><td>"+result[i].province +"</td><td><a href='/city?cityid="+result[i]._id+"'>"+ result[i].city+"<a/></td><td>"+result[i].Note+"</td><td><a href='/insertkecamatan?cityid="+result[i]._id+"'>Insert Kecamatan</a></td></tr>"
+                else 
+                reply += "<tr><td>"+(i+1)+"</td><td>"+result[i].province +"</td><td><a href='/city?cityid="+result[i]._id+"'>"+ result[i].city+"<a/></td><td>"+result[i].Note+"</td><td>"+result[i].kecamatan+"</td></tr>"
               }
             db.close();
             res.send(reply);
@@ -683,6 +822,14 @@ app.get('/insertkecamatan', auth, (req, res) => {
             html += "<INPUT type='reset'  value='Reset'>";
             html += "</form>";
 
+            html += "<p>Or Insert Kecamatan Array</p>"
+            html += "<form action='/insertkecamatan?cityid="+cityId+"'  method='post' id='form2' name='form2'>";
+            html += "<input type= 'hidden' name='isstring' value='1'>";
+            html += "<p>Kecamatan name: </p>";
+            html += "<input id='input2' type='submit' value='Save'>";
+            html += "<INPUT type='reset'  value='Reset'>";
+            html += '<textarea rows="4" cols="50" name="kecamatan" form="form2"></textarea>';
+
             var arrayNo;
             console.log(JSON.stringify(result.kecamatan))
             if (result.kecamatan == null) {
@@ -712,10 +859,20 @@ app.post('/insertkecamatan', auth, urlencodedParser, function (req, res){
     var isJson = 0;
     reply += "<br>City id is : " + cityId;
 
-    console.log(req.body)
+    //console.log(req.body)
 
         reply += "<br>Array length is : " + req.body.kecamatan.length;
-        reply += "<br>Kecamatan name is : " + req.body.kecamatan;
+        var kecamatan;
+        if (req.body.isstring == 1) {
+            reply += "<br>isstring is : 1"
+            kecamatan = JSON.parse(req.body.kecamatan);
+            reply += "<br>Kecamatan name is : " + kecamatan;
+        } else {
+            reply += "<br>isstring is : 2"
+            kecamatan = req.body.kecamatan;
+            reply += "<br>Kecamatan name is : " + kecamatan;
+        }
+        
 
     
     MongoClient.connect(url, { useNewUrlParser: true }, function(err, db) {
@@ -738,7 +895,7 @@ app.post('/insertkecamatan', auth, urlencodedParser, function (req, res){
         //newvalues = { $unset: { kecamatan: "", updateDate: new Date() } };
         //newvalues = { $set: { kecamatan: req.body.kecamatan, updateDate: new Date() } };
         //newvalues = {  $set: {updateDate: new Date() }, $push: { kecamatan: { $each: req.body.kecamatan } } };
-        newvalues = {  $set: {updateDate: new Date() }, $addToSet: { kecamatan: { $each: req.body.kecamatan } } };  // If use $push duplicate in array is possible
+        newvalues = {  $set: {updateDate: new Date() }, $addToSet: { kecamatan: { $each: kecamatan } } };  // If use $push duplicate in array is possible
         //newvalues = { $pull: {kecamatan: ""}}   // use $pull to delete empty array
         try {
             dbo.collection("provinces").updateOne(myquery, newvalues);
@@ -747,23 +904,23 @@ app.post('/insertkecamatan', auth, urlencodedParser, function (req, res){
             console.log(e);
         }
 
-        dbo.collection("provinces").findOne(myquery, function(err, result2) {
+        dbo.collection("provinces").findOne(myquery, function(err, result) {
             if (err) throw err;
             //console.log("\n1. Insert provinces");
-            console.log(result2);
+            console.log(result);
 
             var arrayNo;
-            if (result2.kecamatan == null) {
+            if (result.kecamatan == null) {
                 arrayNo = 0;
             } else {
-                arrayNo = result2.kecamatan.length
+                arrayNo = result.kecamatan.length
             }
             var indexNo=0;
 
             reply += "<br><br>Existing kecamatan in "+cityName+":<br>";
             for (var i = 0; i < arrayNo; i++) {
                 indexNo++;
-                reply += `${indexNo}. ${result2.kecamatan[i]}<br>`;
+                reply += `${indexNo}. ${result.kecamatan[i]}<br>`;
             }
 
             res.send(reply);
