@@ -27,6 +27,15 @@ app.use(expressSession({
     saveUninitialized: true
 }))
 
+function IsJsonString(str) {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+    return true;
+}
+
 var auth = function(req, res, next) {
     console.log(req.session.user);  
     if (req.session && req.session.user !== null && req.session.admin)
@@ -56,12 +65,7 @@ MongoClient.connect(url, { useNewUrlParser: true }, function (err, client) {
         }
 
         console.log("Empty flag 2 : " + emptyflag)
-        /*var myobj = {"_id":"516","province":"Maluku Utara","city":"Ternate","Note":"Kota","area":"111"}
-            dbo.collection("provinces").insertOne(myobj, function(err, res) {
-                if (err) throw err;
-                console.log("1 document in provinces inserted!");
-                client.close();
-              });*/
+        
 
         if (emptyflag == 1) {
             console.log("Let's write database")
@@ -69,14 +73,6 @@ MongoClient.connect(url, { useNewUrlParser: true }, function (err, client) {
                 if (err) throw err;
                 var jsonquery = JSON.parse(data, null, 2);
 
-                /*try {
-                    dbo.collection("provinces").insertMany(jsonquery);/*, function (err, docs) {
-                        if (err) throw err;
-                        console.log("Number of documents inserted : " + docs.name.insertedCount);
-                    });*//*
-                } catch (e) {
-                    console.log(e);
-                }*/
                 dbo.collection("provinces").insertMany(jsonquery, function (err, docs) {
                     if (err) throw err;
                     console.log("Number of documents inserted : " + docs.insertedCount);
@@ -865,7 +861,13 @@ app.post('/insertkecamatan', auth, urlencodedParser, function (req, res){
         var kecamatan;
         if (req.body.isstring == 1) {
             reply += "<br>isstring is : 1"
-            kecamatan = JSON.parse(req.body.kecamatan);
+            var isJson = IsJsonString(req.body.kecamatan)
+            if (isJson) {   // If string is Json, use JSON.parse()
+                kecamatan = JSON.parse(req.body.kecamatan);
+            } else {   // If string is not Json, use comma separated string
+                kecamatan = req.body.kecamatan.split(",");
+            }
+            
             reply += "<br>Kecamatan name is : " + kecamatan;
         } else {
             reply += "<br>isstring is : 2"
