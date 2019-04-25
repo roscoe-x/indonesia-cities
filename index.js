@@ -5,7 +5,7 @@ const PORT = process.env.PORT || 8080;
 //var MongoClient = require('mongodb').MongoClient;
 const { MongoClient, ObjectID } = require('mongodb');
 //var url = "mongodb://35.240.240.28:27017/indonesiaprovincesdb";
-var url = "mongodb+srv://process.env.MONGODB_USER:process.env.MONGODB_PASSWORD@cluster0-tpcht.mongodb.net/test?retryWrites=true"
+var url = `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@cluster0-tpcht.mongodb.net/test?retryWrites=true`
 
 var bodyParser = require('body-parser')
 var urlencodedParser = bodyParser.urlencoded({ extended: true });
