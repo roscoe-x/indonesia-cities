@@ -448,7 +448,10 @@ app.get('/showallprovinces', (req, res) => {
               <th>Kecamatan</th>
             </tr>`
             for (var i = 0, len = result.length; i < len; i++) {
-                html += "<tr><td>"+(i+1)+"</td><td>"+result[i].province +"</td><td><a href='/city?cityid="+result[i]._id+"'>"+ result[i].city+"<a/></td><td>"+result[i].Note+"</td><td><a href='/insertkecamatan?cityid="+result[i]._id+"'>Insert Kecamatan</a></td></tr>"
+                if (result[i].kecamatan === undefined)
+                    html += "<tr><td>"+(i+1)+"</td><td>"+result[i].province +"</td><td><a href='/city?cityid="+result[i]._id+"'>"+ result[i].city+"<a/></td><td>"+result[i].Note+"</td><td><a href='/insertkecamatan?cityid="+result[i]._id+"'>Insert Kecamatan</a></td></tr>"
+                else
+                    html += "<tr><td>"+(i+1)+"</td><td>"+result[i].province +"</td><td><a href='/city?cityid="+result[i]._id+"'>"+ result[i].city+"<a/></td><td>"+result[i].Note+"</td><td>"+result[i].kecamatan+"</td></tr>"
               }
             html += '</table>'
             res.write(html)
