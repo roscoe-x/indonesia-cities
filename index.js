@@ -357,6 +357,7 @@ app.get('/', (req, res) => {
     html += "<div id='div1' name='formset' class='formset'>";
     html += "<p>Province: <input type= 'text' name='province'></p>";
     html += "<p>Regency / City: <input type='text' name='city'></p>";
+    html += "<p>District / Kecamatan: <input type='text' name='kecamatan'></p>";
     html += "</div>";
     html += "</div>";
     html += "<input id='input1' type='submit' value='Search'>";
@@ -663,7 +664,7 @@ app.get('/airport', (req, res) => {
      </head>`;
     html += '<h1>Airports in Indonesia Provinces</h1>'
     html += 'This application will show you Airport List in Indonesia Provinces and its Regencies and Cities'
-    html += "<form action='/search'  method='post' name='form1'>";
+    html += "<form action='/airport'  method='post' name='form1'>";
     html += `<table id="t01">
             <tr>
               <th>No</th>
@@ -723,6 +724,7 @@ app.post('/search', urlencodedParser, function (req, res){
     reply += "<br>Array length is : " + req.body.province.length;
     reply += "<br>Province name is : " + req.body.province;
     reply += "<br>City is : " + req.body.city; 
+    reply += "<br>Kecamatan is : "+ req.body.kecamatan
     //res.write(reply);
 
     MongoClient.connect(url, { useNewUrlParser: true }, function(err, db) {
@@ -739,7 +741,7 @@ app.post('/search', urlencodedParser, function (req, res){
         
         // find()
         var query = { $and : [ { province: { $regex : req.body.province, $options : 'i' }},
-            {city: { $regex: req.body.city, $options: 'i' }}]};
+            {city: { $regex: req.body.city, $options: 'i' }}, {kecamatan: { $regex: req.body.kecamatan, $options: 'i'}}]};
         console.log(query);
         dbo.collection("provinces").find(query).toArray(function(err, result) {
             if (err) throw err;
@@ -762,7 +764,7 @@ app.post('/search', urlencodedParser, function (req, res){
                 if (result[i].kecamatan === undefined)
                     reply += "<tr><td>"+(i+1)+"</td><td>"+result[i].province +"</td><td><a href='/city?cityid="+result[i]._id+"'>"+ result[i].city+"<a/></td><td>"+result[i].Note+"</td><td><a href='/insertkecamatan?cityid="+result[i]._id+"'>Insert Kecamatan</a></td></tr>"
                 else 
-                reply += "<tr><td>"+(i+1)+"</td><td>"+result[i].province +"</td><td><a href='/city?cityid="+result[i]._id+"'>"+ result[i].city+"<a/></td><td>"+result[i].Note+"</td><td>"+result[i].kecamatan+"</td></tr>"
+                    reply += "<tr><td>"+(i+1)+"</td><td>"+result[i].province +"</td><td><a href='/city?cityid="+result[i]._id+"'>"+ result[i].city+"<a/></td><td>"+result[i].Note+"</td><td>"+result[i].kecamatan+"</td></tr>"
               }
             db.close();
             res.send(reply);
