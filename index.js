@@ -1053,9 +1053,10 @@ app.get('/city', (req, res) => {
                         var d = moment(result2[i].insertdate);
 
                         html += `<div class='news'><h3>${result2[i].title}</h3>`
-                        html += `<p>Author is ${result2[i].author}. Published on : ${d.format("MMM DD YYYY, h:mm a")}`
-                        html += `<p>${result2[i].content}<p>`
-                        html += `<p>Link:<br>${result2[i].link}`
+                        html += `<p>Author is ${result2[i].author}. Published on : ${d.format("MMM DD YYYY, h:mm a")}</p>`
+                        html += `<p>${result2[i].content}</p>`
+                        html += `<p>Category: ${result2[i].category}</p>`
+                        html += `<p>Link:<br><a href='${result2[i].link}'>${result2[i].linkname}</a>`
                         html += `</div>`
                     }
                 }
@@ -1126,6 +1127,8 @@ app.get('/insertnews', auth, (req, res) => {
             html += "<div id='div1' name='formset' class='formset'>";
             html += "<p>Title: <input type= 'text' name='title'></p>";
             html += "<p>Content: <textarea name='content'></textarea></p>";
+            html += "<p>Cateogry: <input type= 'text' name='category'></p>"
+            html += "<p>Link name: <input type= 'text' name='linkname'></p>"
             html += "<p>Link: <input type= 'text' name='link'></p>";
             html += "</div>";
             html += "</div>";
@@ -1192,7 +1195,7 @@ app.post('/insertnews', auth, urlencodedParser, function (req, res){
         //newvalues = {  $set: {updateDate: new Date() }, $push: { kecamatan: { $each: req.body.kecamatan } } };
         //newvalues = {  $set: {updateDate: new Date() }, $addToSet: { kecamatan: { $each: req.body.kecamatan } } };  // If use $push duplicate in array is possible
         //newvalues = { $pull: {kecamatan: ""}}   // use $pull to delete empty array
-        newsobject = { title: req.body.title, content: req.body.content, link: req.body.link, 
+        newsobject = { title: req.body.title, content: req.body.content, category: req.body.category, linkname: req.body.linkname, link: req.body.link, 
             author: req.session.user, cityid: Number(cityId), insertdate: new Date() }
         try {
             dbo.collection("news").insertOne(newsobject);
