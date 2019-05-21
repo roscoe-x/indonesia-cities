@@ -190,7 +190,7 @@ app.post('/register', urlencodedParser, function (req, res) {
 
             dbo.collection("member").createIndex( { username: 1 }, { unique: true } )
 
-            memberobject = { username: req.body.username, email: req.body.email, password: hash }
+            memberobject = { username: req.body.username, email: req.body.email, password: hash, registerdate: new Date() }
             dbo.collection("member").insertOne(memberobject)
             .then(function (result) {
                 reply += "<br>1 document in member inserted";
