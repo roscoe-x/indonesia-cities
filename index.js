@@ -1127,7 +1127,7 @@ app.get('/insertnews', auth, (req, res) => {
             html += "<div id='div1' name='formset' class='formset'>";
             html += "<p>Title: <input type= 'text' name='title'></p>";
             html += "<p>Content: <textarea name='content'></textarea></p>";
-            html += "<p>Cateogry: <input type= 'text' name='category'></p>"
+            html += "<p>Category: <input type= 'text' name='category'></p>"
             html += "<p>Link name: <input type= 'text' name='linkname'></p>"
             html += "<p>Link: <input type= 'text' name='link'></p>";
             html += "</div>";
